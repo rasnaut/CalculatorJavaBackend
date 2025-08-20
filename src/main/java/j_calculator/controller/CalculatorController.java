@@ -2,56 +2,63 @@ package j_calculator.controller;
 
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.log.LogMessage;
 
 import j_calculator.model.Calculation;
 import j_calculator.model.CalculationSession;
 import j_calculator.service.CalculationService;
 
-import java.io.Console;
-import java.util.List;
+import java.util.logging.Logger;
+import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/j_calculator")
+@RequestMapping("/api/calculator")
 public class CalculatorController {
 
-    @Autowired
     private CalculationService calculationService;
-    
+    private static final Logger logger = Logger.getLogger(CalculationService.class.getName());
+
+    @Autowired
+    public CalculatorController(CalculationService calculationService) {
+        this.calculationService = calculationService;
+    }
+        
     @GetMapping("/add")
     public String add(@RequestParam double a, @RequestParam double b, @RequestParam String session) {
-        System.out.println("Add operation: " + session);
-        Calculation newCalculation = new Calculation("+", a, b, a+b, session);
-        System.out.println("Calculation created!");
-        calculationService.saveCalculation(session, newCalculation);
-        return String.valueOf(a + b);
+        logger.info("Session" + session + " Add: " + String.valueOf(a) + " + " + String.valueOf(b));
+        LogMessage.format("Additional");
+        Calculation newCalculation = calculationService.saveCalculation(session, new Calculation(a, b, "+"));
+        return String.valueOf(newCalculation.getResult());
     }
 
     @GetMapping("/multiply")
     public String multiply(@RequestParam double a, @RequestParam double b, @RequestParam String session) {
-        calculationService.saveCalculation(session, new Calculation("*", a, b, a*b, session));
-        return String.valueOf(a * b);
+        Calculation newCalculation = calculationService.saveCalculation(session, new Calculation(a, b, "*"));
+        return String.valueOf(newCalculation.getResult());
     }
     
     @GetMapping("/devide")
     public String devide(@RequestParam double a, @RequestParam double b, @RequestParam String session) {
-        calculationService.saveCalculation(session, new Calculation("/", a, b, a/b, session));
-        return String.valueOf(a / b);
+        
+        Calculation newCalculation = calculationService.saveCalculation(session, new Calculation(a, b, "/"));
+        return String.valueOf(newCalculation.getResult());
     }
 
     @GetMapping("/subtract")
     public String substruct(@RequestParam double a, @RequestParam double b, @RequestParam String session) {
-        System.out.println("SUBSTRACT: " + a + " - " + b);
-        calculationService.saveCalculation(session, new Calculation("-", a, b, a-b, session));
-        return String.valueOf(a - b);
+        Calculation newCalculation = calculationService.saveCalculation(session, new Calculation(a, b, "-"));
+        return String.valueOf(newCalculation.getResult());
     }
 
     @PostMapping("/session")
     public CalculationSession createSession() {
-        return calculationService.createSession();
+        logger.info("!!! Creating session !!!");
+        return calculationService.createSession(UUID.randomUUID().toString());
     }
 
     @GetMapping("/history/{sessionId}")
-    public List<Calculation> getHistory(@PathVariable String sessionId) {
+    public Calculation[] getHistory(@PathVariable String sessionId) {
+        logger.info("get session by ID:" + sessionId);
         return calculationService.getCalculations(sessionId);
     }
 

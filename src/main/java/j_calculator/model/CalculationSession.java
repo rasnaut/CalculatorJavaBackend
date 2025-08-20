@@ -1,45 +1,58 @@
 package j_calculator.model;
 
-import javax.persistence.*;
-
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Stack;
+import java.util.UUID;
+import java.util.Optional;
 
 import lombok.Getter;
 import lombok.Setter;
 
-@Entity
+
 public class CalculationSession {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
     @Getter @Setter
-    @Column(unique = true)
     private String sessionId;
-    
     @Getter @Setter
     private boolean active;
-
-    @Getter @Setter
+    @Getter
     private LocalDateTime createdAt;
-
-    @Getter @Setter
+    @Getter
     private LocalDateTime updatedAt;
 
-    @Getter
-    @OneToMany(mappedBy = "session", cascade = CascadeType.ALL)
-    private List<Calculation> calculations = new ArrayList<>();
+    private Stack<Calculation> calculations = new Stack<>();
 
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
+    public CalculationSession() {
+        this.sessionId = UUID.randomUUID().toString();
+        this.active = true;
+        onCreate();
     }
 
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+    public CalculationSession(String sessionID, boolean active) {
+        this.sessionId = sessionID;
+        this.active = active;
+        onCreate();
+    }
+    
+    private void onCreate() { createdAt = LocalDateTime.now(); }
+    
+    private void onUpdate() { updatedAt = LocalDateTime.now(); }
+
+    public void addCalculation(Calculation newCalculation) {
+        calculations.push(newCalculation);
+        onUpdate();
+    }
+
+    public Optional<Calculation> popCalculation() {
+        if(calculations.empty())
+            return Optional.empty();
+        onUpdate();
+        return Optional.of(calculations.pop());
+    }
+
+    public Optional<Calculation> getCalculation(int index) {
+        if (index < 0 || index >= calculations.size())
+            return Optional.empty();
+        return Optional.of(calculations.get(index));
     }
 }

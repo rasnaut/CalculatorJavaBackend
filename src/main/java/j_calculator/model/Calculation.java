@@ -1,40 +1,39 @@
 package j_calculator.model;
+import lombok.Value;
 
-import java.time.LocalDateTime;
-
-import javax.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
-
-@Entity
-@NoArgsConstructor
+@Value
 public class Calculation {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Getter @Setter
     private String operation;
-    @Getter @Setter
     private double operand1;
-    @Getter @Setter
     private double operand2;
-    @Getter @Setter
     private double result;
 
-    @Setter
-    @ManyToOne
-    @JoinColumn(name = "session_id")
-    private CalculationSession session;
-
-     public Calculation(String operation, double operand1, double operand2, double result, 
-                                                            String session) {
-        System.out.println("Calculation create started!");                                                       
-        this.operation = operation;
+    public Calculation(double operand1, double operand2, String operation) {
         this.operand1 = operand1;
         this.operand2 = operand2;
-        this.session.setSessionId(session);
-        System.out.println("Calculation create complete!");
+        this.operation = operation;
+        this.result = executeOperation();
+    }
+
+    // Логика выполнения вычислений
+    private double executeOperation() {
+        switch (operation) {
+            case "+": return add(operand1, operand2);
+            case "-": return subtract(operand1, operand2);
+            case "*": return multiply(operand1, operand2);
+            case "/": return divide(operand1, operand2);
+            default:
+                throw new IllegalArgumentException("Invalid operation: " + operation);
+        }
+    }
+
+    private double add     (double a, double b) { return a + b; }
+    private double subtract(double a, double b) { return a - b; }
+    private double multiply(double a, double b) { return a * b; }
+    private double divide  (double a, double b) {
+        if (b == 0) {
+            throw new ArithmeticException("Division by zero");
+        }
+        return a / b;
     }
 }

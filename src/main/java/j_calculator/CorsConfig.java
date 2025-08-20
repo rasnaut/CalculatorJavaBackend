@@ -9,7 +9,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class CorsConfig {
 
-    @Value("${ALLOWED_ORIGINS}")
+    @Value("${allowed.origins}")
     private String[] allowedOrigins;
 
     @Bean
@@ -22,5 +22,13 @@ public class CorsConfig {
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS");
             }
         };
+    }
+
+    @Bean
+    public String dbClientUrl() {
+        if (allowedOrigins.length < 2) {
+            throw new IllegalStateException("The allowedOrigins property must not be empty.");
+        }
+        return allowedOrigins[1] + "/api";
     }
 }

@@ -2,54 +2,67 @@ package j_calculator.service;
 
 import j_calculator.model.Calculation;
 import j_calculator.model.CalculationSession;
-import j_calculator.repository.CalculationRepository;
-import j_calculator.repository.CalculationSessionRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.UUID;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.beans.factory.annotation.Value;
+
+import java.util.logging.Logger;
+
+import org.springframework.beans.factory.annotation.Autowired;
+
 
 @Service
 public class CalculationService {
+    private static final Logger logger = Logger.getLogger(CalculationService.class.getName());
 
+    private final RestTemplate restTemplate;
+    private final String dbClientUrl;
+    private final String dbClientPort;
+    
     @Autowired
-    private CalculationRepository calculationRepository;
+    public CalculationService(@Value("${client.db.url}") String dbClientUrl, @Value("${client.db.port}") String dbClientPort) {
+        this.dbClientUrl = dbClientUrl;
+        this.dbClientPort = dbClientPort;
+        this.restTemplate = new RestTemplate();
+    }
 
-    @Autowired
-    private CalculationSessionRepository sessionRepository;
+    public CalculationService(String dbClientUrl, String dbClientPort, RestTemplate restTemplate) {
+        this.dbClientUrl = dbClientUrl;
+        this.dbClientPort = dbClientPort;
+        this.restTemplate = restTemplate;
+    }
 
-    public CalculationSession createSession() {
-        CalculationSession session = new CalculationSession();
-        session.setSessionId(UUID.randomUUID().toString());
-        session.setActive(true);
-        System.out.println("Save Sassion: " + session.getSessionId());
-        return sessionRepository.save(session);
+    public String getDbClientUrl() { return dbClientUrl; }
+    public String getDbClientPort() { return dbClientPort; }
+    public String getFinalDbClientUrl() {
+        return "http://" + dbClientUrl + ":" + dbClientPort;
+    }
+
+    public CalculationSession createSession(String sessionID) {
+        String url = getFinalDbClientUrl() + "/api/sessions/" + sessionID + "/create";
+        logger.info("DB URL: " + url);
+        CalculationSession session = new CalculationSession(sessionID, true); // Генерация sessionId в Java
+        
+        restTemplate.postForObject(url, sessionID, Void.class);
+        logger.info("Calculation session created!!!");
+        return session;
     }
 
     public Calculation saveCalculation(String sessionId, Calculation calculation) {
         System.out.println("Save Calculation by ID: " + sessionId);
-        CalculationSession session = sessionRepository.findBySessionId(sessionId);
-        if (session == null || !session.isActive()) {
-            throw new IllegalArgumentException("Invalid or inactive session");
-        }
-        calculation.setSession(session);
-        return calculationRepository.save(calculation);
+        String url = getFinalDbClientUrl() + "/api/sessions/" + sessionId + "/save_calculations";
+        restTemplate.postForObject(url, calculation, Void.class);
+        return calculation;
     }
-
-    public List<Calculation> getCalculations(String sessionId) {
-        CalculationSession session = sessionRepository.findBySessionId(sessionId);
-        if (session == null) {
-            throw new IllegalArgumentException("Invalid session");
-        }
-        return session.getCalculations();
+    
+    public Calculation[] getCalculations(String sessionId) {
+        String url = getFinalDbClientUrl() + "/api/sessions/" + sessionId + "/get_calculations";
+        return restTemplate.getForObject(url, Calculation[].class);
     }
 
     public void closeSession(String sessionId) {
-        CalculationSession session = sessionRepository.findBySessionId(sessionId);
-        if (session != null) {
-            session.setActive(false);
-            sessionRepository.save(session);
-        }
+        String url = getFinalDbClientUrl() + "/api/sessions/" + sessionId + "/close";
+        restTemplate.postForObject(url, sessionId, Void.class);
     }
 }

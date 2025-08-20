@@ -20,7 +20,7 @@ FROM openjdk:11-jre-slim
 
 WORKDIR /app
 
-COPY --from=build /app/target/j_calculator-0.0.1-SNAPSHOT.jar app.jar
+COPY --from=build /app/target/calculator_java_backend-0.0.1-SNAPSHOT.jar app.jar
 ENV ALLOWED_ORIGINS=http://localhost:5000,http://localhost:8080
 
 EXPOSE 8080
