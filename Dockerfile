@@ -8,6 +8,8 @@ WORKDIR /app
 COPY .mvn/ .mvn
 COPY mvnw pom.xml ./
 
+RUN chmod +x mvnw
+
 # Upload dependency without project rebuild (if code not changed)
 RUN ./mvnw dependency:go-offline -B
 
