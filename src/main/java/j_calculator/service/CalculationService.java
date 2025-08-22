@@ -1,12 +1,14 @@
 package j_calculator.service;
 
 import j_calculator.model.Calculation;
+import j_calculator.model.CalculationDto;
 import j_calculator.model.CalculationSession;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.beans.factory.annotation.Value;
 
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,7 +60,11 @@ public class CalculationService {
     
     public Calculation[] getCalculations(String sessionId) {
         String url = getFinalDbClientUrl() + "/api/sessions/" + sessionId + "/get_calculations";
-        return restTemplate.getForObject(url, Calculation[].class);
+         CalculationDto[] dto = restTemplate.getForObject(url, CalculationDto[].class);
+        
+        return Arrays.stream(dto)
+                .map(d -> new Calculation(d.getOperand1(), d.getOperand2(), d.getOperation()))
+                .toArray(Calculation[]::new);
     }
 
     public void closeSession(String sessionId) {

@@ -1,4 +1,5 @@
 package j_calculator.model;
+
 import lombok.Value;
 
 @Value
